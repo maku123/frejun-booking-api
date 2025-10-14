@@ -1,0 +1,32 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  # The Database Service
+  db:
+    image: postgres:13                 # Use the official PostgreSQL version 13 image
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # This saves your data even if the container stops
+    environment:
+      - POSTGRES_DB=frejun_db          # Database name
+      - POSTGRES_USER=frejun_user      # Database user
+      - POSTGRES_PASSWORD=frejun_pass  # Database password
+
+  # The Web Application Service
+  web:
+    build: .                           # Build the image from the Dockerfile in this directory
+    command: python manage.py runserver 0.0.0.0:8000 # The command to start the server
+    volumes:
+      - ./src:/app                     # Link our local 'src' folder to the container's '/app' folder
+    ports:
+      - "8000:8000"                    # Map port 8000 on our machine to port 8000 in the container
+    environment:
+      - POSTGRES_NAME=frejun_db
+      - POSTGRES_USER=frejun_user
+      - POSTGRES_PASSWORD=frejun_pass
+    depends_on:
+      - db                             # Tell the 'web' service to wait for the 'db' service to start first
+
+volumes:
+  postgres_data:                       # Defines the volume we used for the database
