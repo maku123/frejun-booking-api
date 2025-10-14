@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from .models import Team, RoomType
 from .serializers import BookingCreateSerializer, BookingSerializer
+from rest_framework.pagination import PageNumberPagination
 
 class AvailableRoomsView(APIView):
     """
@@ -56,10 +57,31 @@ class AvailableRoomsView(APIView):
         serializer = RoomSerializer(available_rooms, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class BookingCreateView(APIView):
+class BookingListCreateView(APIView):
     """
-    API view for creating a booking.
+    API view for listing and creating bookings.
+    GET: Returns a paginated list of all bookings.
+    POST: Creates a new booking.
     """
+
+    class StandardResultsSetPagination(PageNumberPagination):
+        page_size = 10  # Number of items per page
+        page_size_query_param = 'page_size'
+        max_page_size = 100
+
+    pagination_class = StandardResultsSetPagination
+
+    def get(self, request, *args, **kwargs):
+        bookings = Booking.objects.select_related('room', 'booked_by').all()
+        
+        paginator = self.pagination_class()
+        paginated_bookings = paginator.paginate_queryset(bookings, request, view=self)
+        
+        # We reuse the BookingSerializer we created earlier
+        serializer = BookingSerializer(paginated_bookings, many=True)
+        
+        return paginator.get_paginated_response(serializer.data)
+
     def post(self, request, *args, **kwargs):
         # For this test, we'll get or create a dummy user.
         # In a real app, this would be `request.user` from an authentication system.
