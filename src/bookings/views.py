@@ -10,11 +10,20 @@ from django.db import transaction
 from .models import Team, RoomType
 from .serializers import BookingCreateSerializer, BookingSerializer
 from rest_framework.pagination import PageNumberPagination
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 
 class AvailableRoomsView(APIView):
     """
     API view to get available rooms for a given time slot.
     """
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='start_time', type=OpenApiTypes.DATETIME, required=True, description='Start of the desired slot (ISO 8601 format with Z)'),
+            OpenApiParameter(name='end_time', type=OpenApiTypes.DATETIME, required=True, description='End of the desired slot (ISO 8601 format with Z)'),
+        ],
+        description="Fetches rooms that are available for the entire duration of the requested time slot."
+    )
     def get(self, request, *args, **kwargs):
         start_time_str = request.query_params.get('start_time')
         end_time_str = request.query_params.get('end_time')
@@ -82,6 +91,11 @@ class BookingListCreateView(APIView):
         
         return paginator.get_paginated_response(serializer.data)
 
+    @extend_schema(
+        request=BookingCreateSerializer,
+        responses={201: BookingSerializer},
+        description="Creates a booking by finding an available room based on the specified type and time slot."
+    )
     def post(self, request, *args, **kwargs):
         # For this test, we'll get or create a dummy user.
         # In a real app, this would be `request.user` from an authentication system.
