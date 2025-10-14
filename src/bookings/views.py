@@ -144,3 +144,23 @@ class BookingListCreateView(APIView):
         except Exception as e:
             # A generic error handler in case something unexpected happens
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class BookingCancelView(APIView):
+    """
+    API view for cancelling (deleting) a booking.
+    """
+    def post(self, request, booking_id, *args, **kwargs):
+        # The booking_id comes from the URL.
+        try:
+            # Find the booking with the given UUID.
+            booking = Booking.objects.get(id=booking_id)
+        except Booking.DoesNotExist:
+            # If no booking is found, return a 404 Not Found error.
+            return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # If the booking is found, delete it from the database.
+        booking.delete()
+
+        # Return a 204 No Content response, which is the standard
+        # for a successful deletion with no body.
+        return Response(status=status.HTTP_204_NO_CONTENT)
