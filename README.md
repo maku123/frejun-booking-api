@@ -18,6 +18,31 @@ This is a RESTful API for a simplified "Virtual Workspace Room Booking System", 
 * **Containerization:** Docker, Docker Compose
 * **API Documentation:** `drf-spectacular` (Swagger/OpenAPI)
 
+## Database Schema
+
+The database is designed using a normalized relational model to ensure data integrity. The core models are:
+
+* **`Room`**: Stores the details of the 15 workspace rooms.
+    * `name`: The unique name of the room (e.g., "Private 1").
+    * `room_type`: The type of the room ('PRIVATE', 'CONFERENCE', 'SHARED').
+    * `capacity`: The maximum number of occupants.
+
+* **`UserProfile`**: Extends Django's built-in `User` model to include additional required fields.
+    * `user`: A **one-to-one** link to the `User` model.
+    * `age`: The user's age.
+    * `gender`: The user's gender.
+
+* **`Team`**: Represents a team of users.
+    * `name`: The name of the team.
+    * `members`: A **many-to-many** relationship with the `User` model.
+
+* **`Booking`**: The central model that connects all other models.
+    * `id`: A unique UUID for each booking.
+    * `room`: A **many-to-one** relationship (ForeignKey) to the `Room` being booked.
+    * `booked_by`: A **many-to-one** relationship (ForeignKey) to the `User` who made the booking.
+    * `team`: An optional **many-to-one** relationship (ForeignKey) to a `Team`.
+    * `start_time` / `end_time`: The timestamp for the booking's duration.
+
 ## Getting Started
 
 ### Prerequisites
@@ -29,7 +54,7 @@ This is a RESTful API for a simplified "Virtual Workspace Room Booking System", 
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/your-username/frejun-booking-api.git](https://github.com/your-username/frejun-booking-api.git)
+    git clone https://github.com/maku123/frejun-booking-api.git
     cd frejun-booking-api
     ```
 
@@ -79,12 +104,30 @@ docker compose exec web python manage.py test
 ### 2. Create a Booking
 
 * **Endpoint:** `POST /api/v1/bookings/`
+
+#### **Example 1: Booking for an Individual**
+
 * **Body (JSON):**
+
     ```json
     {
         "start_time": "2025-11-20T10:00:00Z",
         "end_time": "2025-11-20T11:00:00Z",
         "booking_type": "individual"
+    }
+    ```
+
+#### **Example 2: Booking for a Team**
+
+* **Note:** This requires a `team_id` for a team with 3 or more members.
+* **Body (JSON):**
+
+    ```json
+    {
+        "start_time": "2025-11-21T14:00:00Z",
+        "end_time": "2025-11-21T15:00:00Z",
+        "booking_type": "team",
+        "team_id": 1
     }
     ```
 
